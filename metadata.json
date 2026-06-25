@@ -1,0 +1,6 @@
+{
+  "name": "Tony Personal AI Assistant",
+  "description": "An advanced Sreehari Industries holographic conversation center with live real-time camera scanning, pulsing reactor animations, and voice-assisted Gemini capabilities.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

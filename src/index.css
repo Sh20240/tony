@@ -1,0 +1,309 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+/* Universal box-sizing rule */
+*, *::before, *::after {
+  box-sizing: border-box !important;
+}
+
+/* Base resets */
+html, body, #root, #app {
+  margin: 0 !important;
+  padding: 0 !important;
+  background-color: #050a10 !important;
+  width: 100% !important;
+}
+
+/* On desktop, enforce strict viewport fixed positioning */
+@media (min-width: 768px) {
+  html, body, #root, #app, .main-dashboard-container, #jarvis-system-wrapper {
+    height: 100vh !important;
+    width: 100vw !important;
+    max-height: 100vh !important;
+    overflow: hidden !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+  }
+}
+
+/* On mobile, allow full layout flow and clean stacking */
+@media (max-width: 767px) {
+  html, body, #root, #app, .main-dashboard-container {
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: relative !important;
+  }
+  
+  #jarvis-system-wrapper {
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: relative !important;
+    width: 100% !important;
+    min-height: 100vh;
+  }
+
+  #jarvis-dashboard {
+    height: auto !important;
+    overflow: visible !important;
+    min-height: 100vh;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+
+  #hud-dashboard-grid {
+    height: auto !important;
+    overflow: visible !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+
+  #reactor-management-pane, #auxiliary-sensor-pane {
+    height: auto !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+}
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Custom background grid and overlay scanner scanning lines */
+.bg-holo-grid {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(14, 165, 233, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(14, 165, 233, 0.04) 1px, transparent 1px);
+}
+
+.bg-dot-matrix {
+  background-size: 20px 20px;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+}
+
+/* Frosted glass custom utility classes */
+.glass-panel {
+  background: rgba(15, 25, 35, 0.7) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(0, 255, 255, 0.3) !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+.glass-panel-lg {
+  background: rgba(15, 25, 35, 0.75) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(0, 255, 255, 0.3) !important;
+  box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.6);
+}
+
+.glass-panel-light {
+  background: rgba(15, 25, 35, 0.55) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(0, 255, 255, 0.15) !important;
+}
+
+/* Glowing text effects */
+.glow-cyber {
+  text-shadow: 0 0 8px rgba(14, 165, 233, 0.6), 0 0 15px rgba(14, 165, 233, 0.3);
+}
+
+.glow-orange {
+  text-shadow: 0 0 8px rgba(249, 115, 22, 0.6), 0 0 15px rgba(249, 115, 22, 0.3);
+}
+
+/* Scanline Sweep animation */
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(1000%);
+  }
+}
+
+.animate-scanline {
+  animation: scanline 6s linear infinite;
+}
+
+/* Holographic flickers */
+@keyframes holographic-flicker {
+  0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% {
+    opacity: 0.99;
+    filter: hue-rotate(0deg) saturate(1);
+  }
+  20%, 21.999%, 63%, 63.999%, 65%, 69.999% {
+    opacity: 0.4;
+    filter: hue-rotate(15deg) saturate(1.4);
+  }
+}
+
+.hologram-flicker {
+  animation: holographic-flicker 12s infinite;
+}
+
+/* Reactor rotation */
+@keyframes spin-slow-reverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin 15s linear infinite;
+}
+
+.animate-spin-reverse-slow {
+  animation: spin-slow-reverse 20s linear infinite;
+}
+
+.animate-spin-reverse-fast {
+  animation: spin-slow-reverse 3s linear infinite;
+}
+
+/* Pulse glow for status indicators */
+@keyframes pulse-glowing {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px rgba(14, 165, 233, 0.4);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 22px rgba(14, 165, 233, 0.8), 0 0 35px rgba(14, 165, 233, 0.4);
+  }
+}
+
+.animate-glowing {
+  animation: pulse-glowing 2.5s ease-in-out infinite;
+}
+
+/* Custom scrollbar for log streams */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(14, 165, 233, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(14, 165, 233, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(14, 165, 233, 0.6);
+}
+
+/* --- WHITE SKY BLUE LIQUID GLASS THEME --- */
+.liquid-glass {
+  background-color: #f0f7ff !important;
+  color: #0f172a !important;
+  background-image: 
+    linear-gradient(to right, rgba(0, 191, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 191, 255, 0.05) 1px, transparent 1px) !important;
+}
+
+.liquid-glass .glass-panel,
+.liquid-glass .glass-panel-lg,
+.liquid-glass .glass-panel-light,
+.liquid-glass #stark-telemetry-helper,
+.liquid-glass #stark-active-logs,
+.liquid-glass #stark-system-diagnostics,
+.liquid-glass #voice-subroutines,
+.liquid-glass #stark-active-logs-inner,
+.liquid-glass #transcript-dialog-box {
+  background: rgba(255, 255, 255, 0.45) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(0, 191, 255, 0.25) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 191, 255, 0.1) !important;
+  color: #1e293b !important;
+}
+
+/* Ensure headings & text in light theme are elegant dark slate and legible */
+.liquid-glass h1, 
+.liquid-glass h2, 
+.liquid-glass h3, 
+.liquid-glass h4, 
+.liquid-glass span, 
+.liquid-glass p, 
+.liquid-glass button {
+  color: #1e293b;
+}
+
+.liquid-glass .text-cyan-400,
+.liquid-glass .text-cyan-300,
+.liquid-glass .text-cyan-500,
+.liquid-glass .text-sky-400 {
+  color: #00BFFF !important; /* Sky Blue */
+}
+
+/* Liquid Theme Accents and borders override */
+.liquid-glass .border-white\/10,
+.liquid-glass .border-white\/5,
+.liquid-glass .border-cyan-500\/40,
+.liquid-glass .border-pink-400\/40 {
+  border-color: rgba(0, 191, 255, 0.25) !important;
+}
+
+.liquid-glass .bg-slate-900\/50,
+.liquid-glass .bg-slate-900\/60,
+.liquid-glass .bg-slate-950\/60,
+.liquid-glass .bg-white\/5,
+.liquid-glass .bg-white\/10 {
+  background-color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Override input text colors in chat */
+.liquid-glass input {
+  background-color: rgba(255, 255, 255, 0.7) !important;
+  color: #0f172a !important;
+  border-color: rgba(0, 191, 255, 0.3) !important;
+}
+
+.liquid-glass input::placeholder {
+  color: #64748b !important;
+}
+
+/* Glow override */
+.liquid-glass .glow-cyber {
+  text-shadow: 0 0 6px rgba(0, 191, 255, 0.4), 0 0 12px rgba(0, 191, 255, 0.15) !important;
+}
+
+/* Smooth fluid cubic transitions for ALL theme elements */
+#jarvis-system-wrapper,
+#stark-boot-loader,
+#jarvis-dashboard,
+.glass-panel,
+.glass-panel-lg,
+#stark-telemetry-helper,
+#stark-active-logs,
+#stark-system-diagnostics,
+button,
+div,
+section,
+main {
+  transition: background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
+              color 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
