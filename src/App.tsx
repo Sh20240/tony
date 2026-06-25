@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { 
   Terminal, Cpu, Zap, Volume2, Mic, MicOff, Send, HelpCircle, 
   Settings, Activity, ShieldAlert, Sparkles, AlertTriangle, 
-  Trash2, Play, RefreshCw, Sun, CheckCircle2, ChevronRight
+  Trash2, Play, RefreshCw, Sun, CheckCircle2, ChevronRight, Video, VideoOff
 } from "lucide-react";
 import { Message, SystemDiagnostics, SystemLog, VoiceSetting } from "./types";
 import ArcReactor from "./components/ArcReactor";
@@ -73,7 +73,7 @@ export default function App() {
     timestamp: new Date().toLocaleTimeString(),
   });
   const [logs, setLogs] = useState<SystemLog[]>(INITIAL_SYSTEM_LOGS);
-  const [systemActive, setSystemActive] = useState<boolean>(false); // Starts with custom Sreehari boot loader
+  const [systemActive, setSystemActive] = useState<boolean>(false); 
   const [wakeWordHeard, setWakeWordHeard] = useState<boolean>(false);
   const [theme, setTheme] = useState<"dark" | "liquid-glass">("dark");
 
@@ -88,7 +88,7 @@ export default function App() {
   const logsContainerRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
-  // New Live API States and Refs
+  // Live API States and Refs
   const [forceCameraActive, setForceCameraActive] = useState<boolean>(false);
   const [isLiveActive, setIsLiveActive] = useState<boolean>(false);
 
@@ -112,12 +112,10 @@ export default function App() {
     const voiceToUse = overrideVoice || selectedVoice;
     addLog("Initiating J.A.R.V.I.S. Multimodal Live API array connection...", "INFO");
     try {
-      // Clean up previous voice array instances
       stopLiveSession();
-
-      // Force camera active state (displays face-to-face optics)
       setForceCameraActive(true);
 
+      // Dynamically map current window domain host to support standard Vercel serverless domains
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const wsUrl = `${protocol}//${window.location.host}/api/live?voice=${voiceToUse}`;
       addLog(`Synchronising real-time secure link: ${wsUrl}`, "DIAG");
@@ -130,7 +128,6 @@ export default function App() {
         setIsLiveActive(true);
         addLog("Secure live subspace bridge established. Mapping acoustics...", "SUCCESS");
 
-        // Request microphone stream at native 16kHz resample mapping
         try {
           const inputAudioCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
           inputAudioCtxRef.current = inputAudioCtx;
@@ -142,7 +139,6 @@ export default function App() {
           micStreamRef.current = stream;
 
           const source = inputAudioCtx.createMediaStreamSource(stream);
-          // Script processor to process PCM chunks
           const processor = inputAudioCtx.createScriptProcessor(2048, 1, 1);
           micProcessorRef.current = processor;
 
@@ -152,16 +148,12 @@ export default function App() {
           processor.onaudioprocess = (e) => {
             if (!isWsOpenRef.current || ws.readyState !== WebSocket.OPEN) return;
             const floatData = e.inputBuffer.getChannelData(0);
-            
-            // Convert native Float32 buffer to 16-bit PCM buffer array
             const pcmBuffer = floatTo16BitPCM(floatData);
             const base64 = base64EncodeArrayBuffer(pcmBuffer);
-            
             ws.send(JSON.stringify({ audio: base64 }));
           };
 
           addLog("Microphone voice transducer active & linked to live array.", "SUCCESS");
-
         } catch (micErr: any) {
           console.error("Microphone linkage failed:", micErr);
           addLog("Microphone array capture blocked. Continuing with visual scanner only.", "WARN");
@@ -171,23 +163,10 @@ export default function App() {
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          
-          if (data.audio) {
-            playLiveAudioChunk(data.audio);
-          }
-          
-          if (data.interrupted) {
-            muteAllActiveLiveVoices();
-          }
-
-          if (data.transcriptText) {
-            // Append Tony's speech transcriptions in real time to the HUD log array
-            addLog(`[Decoded Transcript]: "${data.transcriptText}"`, "DIAG");
-          }
-
-          if (data.error) {
-            addLog(`Subprocessor telemetry error: ${data.error}`, "WARN");
-          }
+          if (data.audio) playLiveAudioChunk(data.audio);
+          if (data.interrupted) muteAllActiveLiveVoices();
+          if (data.transcriptText) addLog(`[Decoded Transcript]: "${data.transcriptText}"`, "DIAG");
+          if (data.error) addLog(`Subprocessor telemetry error: ${data.error}`, "WARN");
         } catch (msgErr) {
           console.error("WebSocket payload error:", msgErr);
         }
@@ -203,7 +182,6 @@ export default function App() {
         console.error("WebSocket general session error:", err);
         addLog("Connection failure on the Live API gateway.", "WARN");
       };
-
     } catch (err: any) {
       console.error("Live boot setup failed:", err);
       addLog(`Failed to configure live array: ${err.message || err}`, "WARN");
@@ -238,7 +216,7 @@ export default function App() {
 
       let startTime = nextStartTimeRef.current;
       if (startTime < audioCtx.currentTime) {
-        startTime = audioCtx.currentTime + 0.05; // tiny latency slice to bypass browser ticks popping
+        startTime = audioCtx.currentTime + 0.05;
       }
       source.start(startTime);
       nextStartTimeRef.current = startTime + audioBuffer.duration;
@@ -254,9 +232,7 @@ export default function App() {
 
   const muteAllActiveLiveVoices = () => {
     activeSourcesRef.current.forEach((src) => {
-      try {
-        src.stop();
-      } catch (e) {}
+      try { src.stop(); } catch (e) {}
     });
     activeSourcesRef.current = [];
     nextStartTimeRef.current = 0;
@@ -264,9 +240,7 @@ export default function App() {
 
   const stopLiveSession = () => {
     if (liveWsRef.current) {
-      try {
-        liveWsRef.current.close();
-      } catch (e) {}
+      try { liveWsRef.current.close(); } catch (e) {}
       liveWsRef.current = null;
     }
     isWsOpenRef.current = false;
@@ -276,14 +250,10 @@ export default function App() {
       try { micProcessorRef.current.disconnect(); } catch (e) {}
       micProcessorRef.current = null;
     }
-
     if (micStreamRef.current) {
-      try {
-        micStreamRef.current.getTracks().forEach((track) => track.stop());
-      } catch (e) {}
+      try { micStreamRef.current.getTracks().forEach((track) => track.stop()); } catch (e) {}
       micStreamRef.current = null;
     }
-
     if (inputAudioCtxRef.current) {
       try { inputAudioCtxRef.current.close(); } catch (e) {}
       inputAudioCtxRef.current = null;
@@ -297,14 +267,10 @@ export default function App() {
     setForceCameraActive(false);
   };
 
-  // Clean-up active live web voice systems when page is closed
   useEffect(() => {
-    return () => {
-      stopLiveSession();
-    };
+    return () => { stopLiveSession(); };
   }, []);
 
-  // Print system updates on log stack
   const addLog = (message: string, level: "INFO" | "WARN" | "SUCCESS" | "DIAG" = "INFO") => {
     const newLog: SystemLog = {
       id: `log-${Date.now()}-${Math.random()}`,
@@ -315,7 +281,6 @@ export default function App() {
     setLogs((prev) => [...prev.slice(-90), newLog]);
   };
 
-  // Scroll messages and logs to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -326,7 +291,6 @@ export default function App() {
     }
   }, [logs]);
 
-  // Handle Speech Recognition setup using Web Speech API
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SpeechRecognition) {
@@ -348,72 +312,50 @@ export default function App() {
         setIsListening(false);
       };
 
-      rec.onend = () => {
-        setIsListening(false);
-      };
+      rec.onend = () => { setIsListening(false); };
 
       rec.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
         if (transcript) {
           addLog(`Acoustic transcript decoded: "${transcript}"`, "SUCCESS");
-          
-          // Check for user-defined wake words: "Tony", "Hi Tony", "Hey Tony"
           const lowerTrans = transcript.toLowerCase();
           if (lowerTrans.includes("tony")) {
             setWakeWordHeard(true);
             addLog("Wake word [TONY] intercepted! Elevated processor locks active.", "SUCCESS");
             setTimeout(() => setWakeWordHeard(false), 3000);
           }
-
           submitVoiceQuery(transcript);
         }
       };
 
       recognitionRef.current = rec;
     } else {
-      addLog("Local SpeechRecognition API unavailable on this host iframe context. Fallback typing active.", "WARN");
+      addLog("Local SpeechRecognition API unavailable on this host context. Fallback typing active.", "WARN");
     }
   }, [selectedVoice]);
 
-  // Completely mutates and silences all vocal/audio systems to prevent overlap
   const clearAllAudioInstances = () => {
-    // 1. Terminate native TTS active buffer source
     if (activeAudioSourceRef.current) {
-      try {
-        activeAudioSourceRef.current.stop();
-      } catch (err) {}
+      try { activeAudioSourceRef.current.stop(); } catch (err) {}
       activeAudioSourceRef.current = null;
     }
-
-    // 2. Cancel local browser speech synthesis
     if (window.speechSynthesis) {
-      try {
-        window.speechSynthesis.cancel();
-      } catch (err) {}
+      try { window.speechSynthesis.cancel(); } catch (err) {}
     }
-    
-    // 3. Terminate all active Multi-Modal Live Audio streams in queue
     activeSourcesRef.current.forEach((src) => {
-      try {
-        src.stop();
-      } catch (e) {}
+      try { src.stop(); } catch (e) {}
     });
     activeSourcesRef.current = [];
     nextStartTimeRef.current = 0;
-
     setIsSpeaking(false);
     addLog("Voice synthesizer feedback terminated by operator override.", "INFO");
   };
 
-  // Play 16-bit PCM little-endian audio returned from custom Gemini-TTS (24kHz)
-  // Returns true if successfully played, false otherwise
   const playPcmAudio = async (base64Audio: string): Promise<boolean> => {
-    clearAllAudioInstances(); // Cut off old speech before playing new speech
+    clearAllAudioInstances();
     addLog("Interpreting synthesized voice response stream...", "DIAG");
     try {
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-      
-      // Convert base64 to binary ArrayBuffer
       const binary = atob(base64Audio);
       const len = binary.length;
       const arrayBuffer = new ArrayBuffer(len);
@@ -422,18 +364,15 @@ export default function App() {
         view.setUint8(i, binary.charCodeAt(i));
       }
 
-      // Decode 16-bit signed integers (PCM) to floats
       const int16Array = new Int16Array(arrayBuffer);
       const float32Array = new Float32Array(int16Array.length);
       for (let i = 0; i < int16Array.length; i++) {
-        float32Array[i] = int16Array[i] / 32768.0; // clamp bounds between -1.0 and 1.0
+        float32Array[i] = int16Array[i] / 32768.0;
       }
 
-      // Create Audio Buffer
       const audioBuffer = audioCtx.createBuffer(1, float32Array.length, 24000);
       audioBuffer.getChannelData(0).set(float32Array);
 
-      // Play Audio Buffer
       const source = audioCtx.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(audioCtx.destination);
@@ -455,16 +394,12 @@ export default function App() {
     }
   };
 
-  // Local client fallback TTS using native Web Speech Synthesis API (COMPLETELY DISABLED TO ELIMINATE DUAL-VOICE OVERLAP)
   const speakClientFallback = (text: string, voice: "Tony" | "Toni") => {
-    // Disabled to prevent dual-voice startup glitch
     addLog("Local SpeechSynthesis disabled. Exclusively using server PCM Web Audio.", "DIAG");
   };
 
-  // Speaks using PCM synthesized voice exclusively, avoiding native browser fallbacks
   const speakWithFallback = async (text: string, voice: "Tony" | "Toni", base64Audio: string | null) => {
     clearAllAudioInstances();
-
     if (base64Audio) {
       await playPcmAudio(base64Audio);
     } else {
@@ -472,21 +407,15 @@ export default function App() {
     }
   };
 
-  // Voice greeting synthesis matching selected character profile
   const speakGreeting = async (voice: "Tony" | "Toni") => {
     const greetingText = "Hi there, I am Tony built by sreeharitm.";
-    
     addLog(`Synthesizing initial audio vocalization sequence for TONY [${voice === "Tony" ? "MALE" : "FEMALE"}]...`, "DIAG");
     try {
       const response = await fetch("/api/jarvis/speak", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          text: greetingText,
-          voiceName: voice 
-        }),
+        body: JSON.stringify({ text: greetingText, voiceName: voice }),
       });
-
       const data = await response.json();
       if (data.status === "success" && data.audio) {
         await speakWithFallback(greetingText, voice, data.audio);
@@ -499,34 +428,25 @@ export default function App() {
     }
   };
 
-  // Change active voice emulation profile instantly
   const handleVoiceChange = async (voice: "Tony" | "Toni") => {
     setSelectedVoice(voice);
     addLog(`System Voice loaded: ${voice === "Tony" ? "TONY (MALE)" : "TONI (FEMALE)"}`, "SUCCESS");
-    
-    // Silence active speech
     clearAllAudioInstances();
-    
-    // Play greeting instantly as specified
     speakGreeting(voice);
 
-    // Dynamic Live Connection Voice Adapting (Hot-swapping live link)
     if (isLiveActive) {
       addLog("Hot-swapping active bidirectional voice link parameters...", "DIAG");
       await startLiveSession(voice);
     }
   };
 
-  // Boot TONY system out loud
   const triggerSysBoot = async () => {
     addLog("Requesting biomechanical sensor authorization (Optics & Acoustics)...", "DIAG");
     try {
-      // Prompt user for camera and microphone access
       const userPermissionsStream = await navigator.mediaDevices.getUserMedia({
         video: { width: 640, height: 480, facingMode: "user" },
         audio: true
       });
-      // Stop temporary tracks of pre-authorization stream so standard sub-sensors can capture cleanly
       userPermissionsStream.getTracks().forEach((track) => track.stop());
       addLog("Sensory permission authorization established! Access granted.", "SUCCESS");
     } catch (err: any) {
@@ -537,44 +457,35 @@ export default function App() {
     addLog("Booting master mainframe routine...", "DIAG");
     setSystemActive(true);
     addLog("All holographic HUD components ONLINE.", "SUCCESS");
-
-    // Play greeting voice and start real-time live link
     speakGreeting(selectedVoice);
     await startLiveSession();
   };
 
-  // Toggle user voice recognition states
   const toggleListening = () => {
     if (!recognitionRef.current) {
       addLog("Voice synthesis recognition engine disabled on system.", "WARN");
       return;
     }
-
     if (isListening) {
       recognitionRef.current.stop();
     } else {
-      clearAllAudioInstances(); // Stop any pending vocals
+      clearAllAudioInstances();
       try {
         recognitionRef.current.start();
       } catch (err: any) {
-        console.error("Could not run recognition start:", err);
         addLog("Recognition context collision. Retry sequence.", "WARN");
       }
     }
   };
 
-  // Handler for direct text typing submission
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim()) return;
-    
-    // Package parameters
     const query = inputText;
     setInputText("");
     submitQuery(query);
   };
 
-  // Submit text input to proxy with optional image frame attached
   const submitQuery = async (text: string) => {
     clearAllAudioInstances();
     addLog(`Operator command received: "${text}"`, "INFO");
@@ -593,9 +504,8 @@ export default function App() {
     setIsThinking(true);
     addLog("Forwarding telemetry to Gemini core analyzer...", "DIAG");
 
-    // Preserve snapshots to reset state immediately for future scans
     const snapshotToUse = cameraSnapshot;
-    setCameraSnapshot(null); // Clear active frame lock indicator
+    setCameraSnapshot(null);
 
     try {
       const response = await fetch("/api/jarvis/chat", {
@@ -620,11 +530,8 @@ export default function App() {
           timestamp: new Date().toLocaleTimeString(),
         };
         setMessages((prev) => [...prev, assistantMsg]);
-
-        // Play synthetic reply voice
         await speakWithFallback(data.text, selectedVoice, data.audio);
 
-        // Slight simulated load fluctuations
         setDiagnostics((prev) => ({
           ...prev,
           reactorLoad: `${Math.floor(80 + Math.random() * 8)}.${Math.floor(Math.random() * 10)}%`,
@@ -649,12 +556,10 @@ export default function App() {
     }
   };
 
-  // Voice submission helper (STT transcript path)
   const submitVoiceQuery = (transcriptText: string) => {
     submitQuery(transcriptText);
   };
 
-  // Clear Chat History logs
   const clearTimeline = () => {
     setMessages([
       {
@@ -667,13 +572,11 @@ export default function App() {
     addLog("System transaction records purged by operator request.", "WARN");
   };
 
-  // Capture Base64 frame from CameraStream component
   const handleCameraCapture = (base64Image: string) => {
     setCameraSnapshot(base64Image);
     addLog("Camera snapshot locked. Ready for query mapping context.", "INFO");
   };
 
-  // Isolated local listener for biometric-uploader and avatar-display-img
   useEffect(() => {
     const picker = document.getElementById('biometric-uploader');
     if (picker) {
@@ -692,43 +595,38 @@ export default function App() {
         }
       };
       picker.addEventListener('change', handleFileChange);
-      return () => {
-        picker.removeEventListener('change', handleFileChange);
-      };
+      return () => { picker.removeEventListener('change', handleFileChange); };
     }
   }, [systemActive]);
 
   return (
     <div 
       id="jarvis-system-wrapper" 
-      className={`w-full font-sans text-slate-300 relative bg-holo-grid selection:bg-cyan-500/30 selection:text-cyan-200 ${theme === 'liquid-glass' ? 'liquid-glass' : 'bg-[#050a10]'}`}
+      className={`w-full min-h-screen font-sans text-slate-300 relative bg-holo-grid selection:bg-cyan-500/30 selection:text-cyan-200 overflow-x-hidden ${theme === 'liquid-glass' ? 'bg-[#f0f8ff] text-slate-800 border-cyan-200 shadow-sky-100' : 'bg-[#050a10]'}`}
       style={{ boxSizing: "border-box" }}
     >
-      
       {/* Background Ambient Glows */}
       <div className="absolute top-[-100px] left-[-100px] w-[500px] h-[500px] bg-cyan-950/30 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-100px] right-[-100px] w-[600px] h-[600px] bg-blue-950/20 rounded-full blur-[120px] pointer-events-none"></div>
 
-      {/* Laser HUD scanning overlay lines */}
+      {/* Laser HUD scanning lines */}
       <div className="absolute inset-x-0 h-[1.5px] bg-cyan-500/5 pointer-events-none animate-scanline z-50" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-950 via-slate-950 to-black pointer-events-none" />
 
       {/* 1. OFF STATE BOOT LOADER SYSTEM */}
       {!systemActive ? (
         <div
           id="stark-boot-loader"
           onClick={triggerSysBoot}
-          className="min-h-screen flex flex-col items-center justify-center p-6 text-center cursor-pointer relative z-15 select-none"
+          className="min-h-screen flex flex-col items-center justify-center p-6 text-center cursor-pointer relative z-10 select-none"
           title="Click to boot Tony"
         >
           <div className="absolute inset-0 bg-dot-matrix opacity-25 pointer-events-none" />
           
           <div className="relative mb-8 text-cyan-400 pointer-events-none">
-            {/* Spinning preview hologram core */}
             <div className="w-40 h-40 rounded-full border-2 border-dashed border-cyan-500/20 animate-spin-slow flex items-center justify-center">
               <div className="w-32 h-32 rounded-full border border-cyan-400/30 animate-spin-reverse-slow flex items-center justify-center">
                 <div className="w-20 h-20 rounded-full bg-white/5 border-2 border-cyan-500/60 flex items-center justify-center animate-pulse shadow-[0_0_20px_rgba(6,182,212,0.3)]">
-                  <Cpu className="w-10 h-10 text-cyan-400 animate-spin-reverse-fast" />
+                  <Cpu className="w-10 h-10 text-cyan-400" />
                 </div>
               </div>
             </div>
@@ -741,23 +639,18 @@ export default function App() {
             PERSONAL AI CONVERSATIONAL COGNISANCE
           </p>
 
-          {/* Simple breath-glowing text instructions overlay in place of button */}
           <div className="flex flex-col items-center gap-2 pointer-events-none">
             <div className="px-6 py-3 bg-cyan-500/5 border border-cyan-500/20 rounded-xl shadow-[0_0_15px_rgba(6,182,212,0.1)]">
               <span className="font-mono text-xs uppercase tracking-[0.3em] text-cyan-400 animate-pulse font-semibold">
                 Click anywhere to wake Tony
               </span>
             </div>
-            <span className="text-[9px] text-slate-500 font-mono tracking-[0.2em] mt-2">
-              [ ACCESS PORTAL STANDBY ]
-            </span>
           </div>
 
           <div id="boot-subtext" className="mt-12 text-[10px] text-slate-600 font-mono tracking-widest pointer-events-none">
             SECURE ACCESS CODE REGISTERED : sreeharitm45@gmail.com
           </div>
 
-          {/* Quick Voice Pre-selector before wakeup */}
           <div 
             onClick={(e) => e.stopPropagation()} 
             className="mt-8 flex items-center gap-3 bg-slate-900/60 border border-white/5 px-4 py-2.5 rounded-xl backdrop-blur-md z-30 pointer-events-auto"
@@ -767,8 +660,8 @@ export default function App() {
               onClick={() => setSelectedVoice("Tony")}
               className={`px-3 py-1.5 rounded-lg font-mono text-[10px] tracking-wider font-semibold transition-all cursor-pointer border ${
                 selectedVoice === "Tony"
-                  ? "bg-cyan-500/10 border-cyan-400/30 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.1)]"
-                  : "bg-transparent border-transparent text-slate-500 hover:text-slate-400"
+                  ? "bg-cyan-500/10 border-cyan-400/30 text-cyan-300"
+                  : "bg-transparent border-transparent text-slate-500"
               }`}
             >
               TONY (MALE)
@@ -777,8 +670,8 @@ export default function App() {
               onClick={() => setSelectedVoice("Toni")}
               className={`px-3 py-1.5 rounded-lg font-mono text-[10px] tracking-wider font-semibold transition-all cursor-pointer border ${
                 selectedVoice === "Toni"
-                  ? "bg-pink-500/10 border-pink-400/30 text-pink-300 shadow-[0_0_10px_rgba(244,114,182,0.1)]"
-                  : "bg-transparent border-transparent text-slate-500 hover:text-slate-400"
+                  ? "bg-pink-500/10 border-pink-400/30 text-pink-300"
+                  : "bg-transparent border-transparent text-slate-500"
               }`}
             >
               TONI (FEMALE)
@@ -787,7 +680,7 @@ export default function App() {
         </div>
       ) : (
         /* 2. MAIN ACTIVE TONY HUD DASHBOARD */
-        <div id="jarvis-dashboard" className="w-full h-full flex flex-col justify-between overflow-hidden relative z-10 gap-3 p-3 md:p-4 box-border">
+        <div id="jarvis-dashboard" className="w-full min-h-screen flex flex-col justify-between p-3 md:p-4 box-border relative z-10 gap-4">
           
           {/* Header Bar */}
           <header id="stark-hud-header" className="flex flex-col md:flex-row md:items-center justify-between border-b border-white/10 pb-3 gap-3 shrink-0">
@@ -798,497 +691,247 @@ export default function App() {
                   TONY 2.0 // MAIN ACCESS PROTOCOL
                 </span>
                 {wakeWordHeard && (
-                  <span className="px-2 py-0.5 rounded text-[9px] bg-amber-500/20 text-amber-400 font-mono uppercase animate-bounce tracking-widest leading-none">
+                  <span className="px-2 py-0.5 rounded text-[9px] bg-amber-500/20 text-amber-400 font-mono uppercase animate-bounce tracking-widest">
                     * Wake Word Verified
                   </span>
                 )}
               </div>
               <h1 id="hud-branding" className="text-xl md:text-2xl font-display font-medium text-slate-100 uppercase tracking-wider mt-0.5">
-                Tony <span className="text-cyan-400/50">Core</span> System Hub
+                Tony <span className="text-cyan-400">Mainframe Matrix</span>
               </h1>
             </div>
 
-            {/* Operator Profile Capsule Badge & Shift Aesthetic Button */}
-            <div className="flex flex-wrap items-center gap-3">
-              {/* Profile Badge Capsule */}
-              <div 
-                id="operator-profile-badge"
-                className="flex items-center gap-2.5 px-3 py-1.5 bg-slate-900/80 border border-cyan-500/30 rounded-full cursor-pointer hover:border-cyan-400 hover:shadow-[0_0_15px_rgba(6,182,212,0.25)] transition-all shrink-0"
-                title="Initialize Biometrics / Upload Picture"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                <span className="font-display text-[9px] md:text-[10px] text-cyan-300 font-bold uppercase tracking-wider">
-                  CHIEF EDITOR SREEHARI
-                </span>
-                <label htmlFor="biometric-uploader" className="cursor-pointer relative w-10 h-10 rounded-full overflow-hidden border border-cyan-400/40 bg-black shrink-0 ml-1 block">
-                  <img 
-                    id="avatar-display-img" 
-                    src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300f0ff' stroke-width='2'><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/><circle cx='12' cy='7' r='4'/></svg>" 
-                    alt="Operator Biometrics" 
-                    style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover" }} 
-                  />
-                </label>
-                <input 
-                  type="file" 
-                  id="biometric-uploader" 
-                  accept="image/*" 
-                  style={{ display: "none" }} 
-                />
-              </div>
-
-              {/* Shift Aesthetic button */}
-              <button
-                id="shift-aesthetic-btn"
+            {/* Top Bar Navigation Controllers */}
+            <div className="flex items-center flex-wrap gap-2">
+              <button 
                 onClick={toggleTheme}
-                className="px-3 py-1.5 rounded-full border border-cyan-500/30 bg-slate-900/80 text-cyan-400 font-mono text-[9px] md:text-[10px] font-bold uppercase tracking-wider hover:border-cyan-400 hover:text-cyan-300 hover:shadow-[0_0_10px_rgba(6,182,212,0.25)] transition-all cursor-pointer flex items-center gap-1 shrink-0"
+                className="p-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 text-slate-400 hover:text-cyan-400 transition"
+                title="Toggle UI Styling Core"
               >
-                <Sun className="w-3.5 h-3.5" />
-                SHIFT AESTHETIC
+                <Sun className="w-4 h-4" />
+              </button>
+              <div className="flex bg-slate-900/80 border border-white/10 rounded-xl p-1 gap-1">
+                <button
+                  onClick={() => handleVoiceChange("Tony")}
+                  className={`px-3 py-1 rounded-lg text-xs font-mono font-medium transition ${selectedVoice === "Tony" ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30" : "text-slate-500"}`}
+                >
+                  Tony Core
+                </button>
+                <button
+                  onClick={() => handleVoiceChange("Toni")}
+                  className={`px-3 py-1 rounded-lg text-xs font-mono font-medium transition ${selectedVoice === "Toni" ? "bg-pink-500/20 text-pink-400 border border-pink-500/30" : "text-slate-500"}`}
+                >
+                  Toni Mod
+                </button>
+              </div>
+              <button 
+                onClick={clearTimeline}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 rounded-xl text-xs font-mono transition"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Purge Logs
               </button>
             </div>
           </header>
 
-          {/* 2x2 Top Metrics Grid */}
-          <div id="status-ribbon" className="grid grid-cols-2 md:grid-cols-4 gap-3 shrink-0">
-            {/* Box 1 */}
-            <div className="glass-panel rounded-2xl p-3 font-mono text-left relative overflow-hidden">
-              <div className="flex items-center gap-1.5 text-[9px] text-slate-400 uppercase tracking-wider">
-                <Terminal className="w-3.5 h-3.5 text-cyan-400" />
-                <span>SYS_GRID_PING</span>
-              </div>
-              <div className="text-xs md:text-sm text-cyan-300 font-bold mt-1 tracking-wider glow-cyber">
-                22ms SECURE
-              </div>
-            </div>
-
-            {/* Box 2 */}
-            <div className="glass-panel rounded-2xl p-3 font-mono text-left relative overflow-hidden">
-              <div className="flex items-center gap-1.5 text-[9px] text-slate-400 uppercase tracking-wider">
-                <Zap className="w-3.5 h-3.5 text-cyan-400" />
-                <span>ARC_REACTOR</span>
-              </div>
-              <div className="text-xs md:text-sm text-cyan-300 font-bold mt-1 tracking-wider glow-cyber">
-                STABLE ({diagnostics.reactorLoad})
-              </div>
-            </div>
-
-            {/* Box 3 */}
-            <div className="glass-panel rounded-2xl p-3 font-mono text-left relative overflow-hidden">
-              <div className="flex items-center gap-1.5 text-[9px] text-slate-400 uppercase tracking-wider">
-                <Cpu className="w-3.5 h-3.5 text-cyan-400" />
-                <span>AI_CORE</span>
-              </div>
-              <div className="text-xs md:text-sm text-emerald-400 font-bold mt-1 tracking-wider">
-                ONLINE
-              </div>
-            </div>
-
-            {/* Box 4 */}
-            <div className="glass-panel rounded-2xl p-3 font-mono text-left relative overflow-hidden">
-              <div className="flex items-center gap-1.5 text-[9px] text-slate-400 uppercase tracking-wider">
-                <Activity className="w-3.5 h-3.5 text-cyan-400" />
-                <span>OPERATOR</span>
-              </div>
-              <div className="text-xs md:text-sm text-slate-300 font-bold mt-1 tracking-wider truncate">
-                SREEHARITM...
-              </div>
-            </div>
-          </div>
-
-          {/* Core App Layout Map */}
-          <main id="hud-dashboard-grid" className="flex-1 flex flex-col md:flex-row gap-4 min-h-0 overflow-y-auto md:overflow-hidden pr-1 box-border">
+          {/* Core HUD Grid Array */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 items-stretch min-h-0">
             
-            {/* COLUMN 1 (LEFT 60%): Vocal Telemetry Records, Arc Reactor, Audio Visualizer, Voice Selector */}
-            <section id="reactor-management-pane" className="w-full md:w-[60%] flex flex-col gap-4 min-h-0">
-              
-              {/* VOICE SYSTEM CORE component panel */}
-              <div id="voice-system-core-panel" className="glass-panel rounded-3xl p-4 relative overflow-hidden shrink-0 border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)] animate-fade-in">
-                <div className="absolute inset-0 bg-dot-matrix opacity-10 pointer-events-none" />
-                
-                <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-3">
-                  <div className="flex items-center gap-1.5">
-                    <Settings className="w-3.5 h-3.5 text-cyan-400 animate-spin-slow" />
-                    <span className="font-display font-medium text-slate-200 text-xs tracking-wider uppercase">
-                      VOICE SYSTEM CORE
-                    </span>
-                  </div>
-                  <span className="font-mono text-[8px] text-cyan-400/70 border border-cyan-400/20 px-1.5 py-0.5 rounded uppercase font-bold tracking-widest animate-pulse">
-                    READY
-                  </span>
+            {/* Left Column: Diagnostics & Mechanical Energy Core */}
+            <div className="flex flex-col gap-4 border border-white/5 bg-slate-950/40 rounded-2xl p-4 backdrop-blur-md justify-between">
+              <div>
+                <div className="flex items-center gap-2 border-b border-white/5 pb-2 mb-4">
+                  <Activity className="w-4 h-4 text-cyan-400" />
+                  <h3 className="text-xs font-mono uppercase tracking-widest text-slate-400 font-semibold">Reactor Telemetry</h3>
+                </div>
+                <div className="flex justify-center my-6">
+                  <ArcReactor active={isLiveActive || isThinking || isSpeaking} />
                 </div>
                 
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    id="core-voice-tony-btn"
-                    onClick={() => handleVoiceChange("Tony")}
-                    className={`flex items-center justify-center py-2.5 px-3 rounded-xl font-mono text-[10px] font-bold tracking-wider transition-all cursor-pointer ${
-                      selectedVoice === "Tony"
-                        ? "bg-cyan-500/15 border border-cyan-400 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.25)]"
-                        : "bg-slate-950/40 border border-cyan-500/20 text-slate-400 hover:text-slate-300 hover:border-cyan-400 hover:shadow-[0_0_10px_rgba(6,182,212,0.15)]"
-                    }`}
-                  >
-                    <span>PROFILE M_01 // TONY (MALE)</span>
-                  </button>
-                  <button
-                    id="core-voice-toni-btn"
-                    onClick={() => handleVoiceChange("Toni")}
-                    className={`flex items-center justify-center py-2.5 px-3 rounded-xl font-mono text-[10px] font-bold tracking-wider transition-all cursor-pointer ${
-                      selectedVoice === "Toni"
-                        ? "bg-pink-500/15 border border-pink-400 text-pink-300 shadow-[0_0_15px_rgba(244,114,182,0.25)]"
-                        : "bg-slate-950/40 border border-cyan-500/20 text-slate-400 hover:text-slate-300 hover:border-pink-400 hover:shadow-[0_0_10px_rgba(244,114,182,0.15)]"
-                    }`}
-                  >
-                    <span>PROFILE F_02 // TONI (FEMALE)</span>
-                  </button>
+                {/* Diagnostics Metadata */}
+                <div className="space-y-2 font-mono text-xs">
+                  <div className="flex justify-between p-2 bg-white/5 rounded-lg border border-white/5">
+                    <span className="text-slate-500">SYSTEM CODENAME:</span>
+                    <span className="text-cyan-400 font-bold">TONY CORE</span>
+                  </div>
+                  <div className="flex justify-between p-2 bg-white/5 rounded-lg border border-white/5">
+                    <span className="text-slate-500">REACTOR LOAD:</span>
+                    <span className="text-amber-400 font-bold animate-pulse">{diagnostics.reactorLoad}</span>
+                  </div>
+                  <div className="flex justify-between p-2 bg-white/5 rounded-lg border border-white/5">
+                    <span className="text-slate-500">THERMAL STATE:</span>
+                    <span className="text-emerald-400 font-bold">{diagnostics.thermalState}</span>
+                  </div>
+                  <div className="flex justify-between p-2 bg-white/5 rounded-lg border border-white/5">
+                    <span className="text-slate-500">CENTRAL INTEGRATION:</span>
+                    <span className="text-cyan-400 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> ONLINE</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Chat timeline interface dialog: VOCAL TELEMETRY RECORDS */}
-              <div id="transcript-dialog-box" className="glass-panel rounded-3xl p-4 md:p-5 flex-1 flex flex-col justify-between overflow-hidden min-h-[350px] relative">
-                <div className="absolute inset-0 bg-dot-matrix opacity-10 pointer-events-none" />
-                
-                {/* Unified Header with Link Controls */}
-                <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4 z-10 shrink-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-cyan-400 font-bold font-mono">&gt;</span>
-                    <span className="font-display font-medium text-slate-200 text-xs tracking-wider uppercase">
-                      VOCAL TELEMETRY RECORDS
-                    </span>
-                    <span className="flex items-center gap-1.5 ml-1">
-                      <span className={`w-2 h-2 rounded-full ${isLiveActive ? "bg-cyan-400 animate-pulse" : "bg-slate-600"} shrink-0`} />
-                      <span className="font-mono text-[9px] uppercase tracking-wider text-slate-400">
-                        {isLiveActive ? "CONNECTED" : "OFFLINE"}
-                      </span>
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    {isLiveActive ? (
-                      <button
-                        id="stop-live-btn"
-                        onClick={stopLiveSession}
-                        className="px-2.5 py-1.5 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-400 font-mono text-[9px] md:text-[10px] hover:bg-rose-500/30 transition-all font-semibold cursor-pointer"
-                      >
-                        DISCONNECT
-                      </button>
-                    ) : (
-                      <button
-                        id="start-live-btn"
-                        onClick={() => startLiveSession()}
-                        className="px-2.5 py-1.5 rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 font-mono text-[9px] md:text-[10px] hover:bg-cyan-500/30 transition-all font-semibold cursor-pointer"
-                      >
-                        ESTABLISH LINK
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={clearTimeline}
-                      title="Clear core record feeds"
-                      className="p-1 px-2 rounded-lg border border-white/10 hover:bg-rose-500/10 hover:border-rose-500/20 text-slate-400 hover:text-rose-400 transition-all font-mono text-[9px] flex items-center gap-1"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      RECYCLE
-                    </button>
-                  </div>
+              {/* Live Waveform Stream Visualizer */}
+              <div className="border border-white/5 bg-black/40 rounded-xl p-3 mt-4">
+                <span className="text-[10px] font-mono text-slate-500 block mb-2 uppercase tracking-wider">Acoustic Audio Waveform</span>
+                <AudioVisualizer active={isSpeaking || isListening || isLiveActive} />
+              </div>
+            </div>
+
+            {/* Center Column: Interactive Neural Terminal */}
+            <div className="flex flex-col border border-white/10 bg-slate-950/60 rounded-2xl backdrop-blur-xl h-[60vh] lg:h-auto justify-between overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2 border-b border-white/5 bg-slate-900/40">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+                  <span className="text-xs font-mono uppercase tracking-widest text-slate-400 font-bold">Holographic HUD Transcripts</span>
                 </div>
+                <div className="flex items-center gap-1.5">
+                  <span className={`w-2 h-2 rounded-full ${isLiveActive ? "bg-emerald-500 animate-ping" : "bg-slate-600"}`} />
+                  <span className="text-[10px] font-mono text-slate-500 uppercase">{isLiveActive ? "Live API Feed Locked" : "Standby"}</span>
+                </div>
+              </div>
 
-                {/* Messages Timeline scrolling elements */}
-                <div id="messages-scroller" className="flex-1 overflow-y-auto space-y-4 pr-1 scroll-smooth z-10 min-h-0">
-                  {messages.map((msg) => {
-                    const isTony = msg.role === "assistant";
-                    return (
-                      <div
-                        key={msg.id}
-                        id={`chat-bubble-${msg.id}`}
-                        className={`flex flex-col max-w-[85%] ${
-                          isTony ? "mr-auto items-start" : "ml-auto items-end"
-                        }`}
-                      >
-                        {/* Speaker tag label */}
-                        <div className="flex items-center gap-1.5 text-[9px] font-mono text-slate-500 mb-1 px-1">
-                          <span>{isTony ? "TONY OS" : "CREATOR"}</span>
-                          <span>•</span>
-                          <span>{msg.timestamp}</span>
-                        </div>
-
-                        {/* Speech Bubble body */}
-                        <div
-                          className={`rounded-2xl p-3 text-xs leading-relaxed border transition-all ${
-                            isTony
-                              ? "bg-white/5 border-white/10 text-slate-200"
-                              : "bg-cyan-500/10 border-cyan-500/20 text-cyan-50 shadow-sm shadow-cyan-950/25"
-                          }`}
-                        >
-                          <p>{msg.content}</p>
-                          
-                          {/* Indicator for attached snapshot */}
-                          {msg.hasImage && (
-                            <span className="inline-flex items-center gap-1 mt-2 text-[9px] font-mono text-amber-400 px-1.5 py-0.5 bg-amber-500/5 border border-amber-500/20 rounded">
-                              <Sparkles className="w-2.5 h-2.5 animate-pulse" />
-                              * Multi-Modal Scanner Feed Attached *
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {isThinking && (
-                    <div className="flex flex-col items-start max-w-[80%] mr-auto">
-                      <div className="flex items-center gap-1 text-[9px] font-mono text-slate-500 mb-1 px-1">
-                        <span>TONY OS</span>
-                        <span>•</span>
-                        <span>SOLVING TELEMETRY</span>
-                      </div>
-                      <div className="rounded-2xl p-3 bg-white/5 border border-white/10 text-slate-400 text-xs flex items-center gap-2">
-                        <span className="flex gap-1.5 items-center">
-                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "0ms" }} />
-                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "150ms" }} />
-                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+              {/* Conversations Feed Block */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {messages.map((msg) => (
+                  <div key={msg.id} className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}>
+                    <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 font-sans text-sm shadow-md border ${
+                      msg.role === "user" 
+                        ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-200 rounded-tr-none" 
+                        : "bg-slate-900/80 border-white/10 text-slate-200 rounded-tl-none"
+                    }`}>
+                      <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                      {msg.hasImage && (
+                        <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-mono text-cyan-400 mt-2 bg-cyan-400/10 px-2 py-0.5 rounded border border-cyan-400/20">
+                          <Sparkles className="w-2.5 h-2.5" /> Optics snapshot mapped
                         </span>
-                        <span>Accessing neurosystem layers, sir...</span>
-                      </div>
+                      )}
                     </div>
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                {/* Snapshot target buffer line */}
-                {cameraSnapshot && (
-                  <div id="camera-snapshot-bar" className="mt-2 flex items-center justify-between p-2 bg-amber-500/5 border border-amber-500/20 rounded-xl relative z-20 shrink-0">
-                    <div className="flex items-center gap-2 overflow-hidden">
-                      <div className="w-10 h-10 rounded border border-amber-500/40 overflow-hidden flex-shrink-0 bg-black">
-                        <img src={cameraSnapshot} referrerPolicy="no-referrer" alt="snapshot" className="w-full h-full object-cover" />
-                      </div>
-                      <div>
-                        <div className="text-[10px] font-mono text-amber-400 font-bold tracking-wider">OPTICAL BUFFER LOCKED</div>
-                        <div className="text-[9px] text-slate-500 truncate max-w-[150px]">Base64 Image Payload Locked</div>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setCameraSnapshot(null)}
-                      className="p-1 px-2 text-slate-500 hover:text-rose-400 text-[10px] font-mono border border-transparent hover:border-rose-500/20 rounded"
-                    >
-                      CLEAR
-                    </button>
+                    <span className="text-[9px] font-mono text-slate-600 uppercase tracking-widest mt-1 px-1">
+                      {msg.role === "user" ? "Operator" : "Tony"} // {msg.timestamp}
+                    </span>
+                  </div>
+                ))}
+                {isThinking && (
+                  <div className="flex items-center gap-2 text-xs font-mono text-cyan-400 px-2 animate-pulse">
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Tony is calculating telemetry parameters...
                   </div>
                 )}
+                <div ref={messagesEndRef} />
+              </div>
 
-                {/* Muted static/dots offline message in timeline */}
-                {!isLiveActive && (
-                  <div className="flex flex-col items-center justify-center py-2 text-slate-500 font-mono text-[9px] gap-0.5 z-10 shrink-0 border-t border-white/5 pt-3">
-                    <div className="flex items-center gap-1.5">
-                      <MicOff className="w-3.5 h-3.5 text-slate-600 animate-pulse" />
-                      <span className="tracking-widest uppercase">NEURAL FEED OFFLINE</span>
-                    </div>
-                    <div className="flex gap-1 mt-1 justify-center">
-                      {Array.from({ length: 8 }).map((_, i) => (
-                        <span key={i} className="w-1 h-1 rounded-full bg-slate-800" />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Input Text box bar */}
-                <form id="speech-query-form" onSubmit={handleFormSubmit} className="mt-3 flex gap-2 relative z-20 shrink-0">
-                  <input
-                    id="hud-input-field"
-                    type="text"
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    placeholder={isListening ? "Listening..." : "Provide command parameters, sir..."}
-                    className="flex-1 px-3 py-2 bg-white/5 border border-white/10 hover:border-white/20 focus:border-cyan-500 text-white rounded-xl text-xs placeholder-slate-500 focus:outline-none transition-all font-mono backdrop-blur-sm"
-                    disabled={isListening}
-                  />
-                  
-                  {isSpeaking && (
-                    <button
-                      type="button"
-                      id="silence-speech-btn"
-                      onClick={clearAllAudioInstances}
-                      title="Silence active diagnostics voice playback"
-                      className="p-2 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/25 text-rose-400 rounded-xl transition-all flex items-center justify-center"
-                    >
-                      <Volume2 className="w-4 h-4 animate-bounce" />
-                    </button>
-                  )}
-
+              {/* Primary User Interactive Control Panel */}
+              <div className="p-3 border-t border-white/5 bg-slate-900/20">
+                <form onSubmit={handleFormSubmit} className="flex items-center gap-2 bg-slate-950/60 border border-white/10 rounded-xl p-1.5 relative">
                   <button
                     type="button"
                     onClick={toggleListening}
-                    id="hud-vocal-ping-btn"
-                    className={`p-2 rounded-xl border transition-all flex items-center justify-center ${
-                      isListening
-                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 animate-pulse"
-                        : "bg-white/5 border-white/10 hover:border-cyan-500/30 text-cyan-400"
-                    }`}
-                    title="Trigger dynamic STT voice sequence"
+                    className={`p-2.5 rounded-lg transition border ${isListening ? "bg-amber-500/20 text-amber-400 border-amber-500/40" : "bg-white/5 border-white/5 text-slate-400 hover:text-slate-200"}`}
+                    title="Toggle Local Speech Recognition"
                   >
-                    <Mic className="w-4 h-4" />
+                    {isListening ? <MicOff className="w-4 h-4 animate-pulse" /> : <Mic className="w-4 h-4" />}
                   </button>
+
+                  <input
+                    type="text"
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    placeholder="Provide mainframe instruction array..."
+                    className="flex-1 bg-transparent border-0 outline-none focus:ring-0 text-sm font-mono text-slate-200 px-2 placeholder:text-slate-600"
+                  />
+
+                  {cameraSnapshot && (
+                    <div className="absolute right-14 top-[-45px] bg-cyan-950 border border-cyan-500/40 rounded-lg px-2 py-1 flex items-center gap-1 shadow-lg animate-bounce">
+                      <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-ping" />
+                      <span className="text-[10px] font-mono text-cyan-300 uppercase font-semibold">Frame Primed</span>
+                    </div>
+                  )}
 
                   <button
                     type="submit"
-                    id="chat-submit-btn"
-                    className="p-2 px-3.5 bg-white/15 border border-white/20 hover:bg-white/20 text-cyan-400 rounded-xl transition-all flex items-center justify-center font-mono text-xs"
-                    disabled={!inputText.trim()}
+                    disabled={!inputText.trim() || isThinking}
+                    className="p-2.5 bg-cyan-500/10 border border-cyan-500/30 rounded-lg text-cyan-400 hover:bg-cyan-500/20 disabled:opacity-40 transition cursor-pointer"
                   >
-                    <Send className="w-3.5 h-3.5" />
+                    <Send className="w-4 h-4" />
                   </button>
                 </form>
-
               </div>
+            </div>
 
-              {/* Sub components row for Arc Reactor, Audio Visualizer, Voice Selector */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 shrink-0 animate-fade-in">
-                {/* Arc Reactor Control */}
-                <ArcReactor 
-                  isThinking={isThinking}
-                  isSpeaking={isSpeaking}
-                  isListening={isListening}
-                  reactorLoad={diagnostics.reactorLoad}
-                  onClick={toggleListening}
-                />
-
-                {/* Right side of sub-grid: Visualizer + Selector */}
-                <div className="flex flex-col gap-3">
-                  <AudioVisualizer 
-                    isThinking={isThinking}
-                    isListening={isListening}
-                    isSpeaking={isSpeaking}
-                  />
-
-                  {/* VOICE SYSTEM Selector */}
-                  <div id="voice-subroutines" className="glass-panel rounded-3xl p-4 flex-1 flex flex-col justify-between relative overflow-hidden">
-                    <div className="absolute inset-0 bg-dot-matrix opacity-10 pointer-events-none" />
-                    
-                    <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2">
-                      <div className="flex items-center gap-1.5">
-                        <Settings className="w-3.5 h-3.5 text-cyan-400" />
-                        <span className="font-display font-medium text-slate-200 text-[10px] tracking-wider uppercase">
-                          VOICE SYSTEM
-                        </span>
-                      </div>
-                      <span className="font-mono text-[8px] text-cyan-400/70 border border-cyan-400/20 px-1.5 py-0.5 rounded uppercase font-bold tracking-widest animate-pulse">
-                        SYS ACTIVE
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 bg-slate-900/50 p-1 rounded-xl border border-white/5">
-                      <button
-                        id="voice-tony-btn"
-                        onClick={() => handleVoiceChange("Tony")}
-                        className={`flex flex-col items-center justify-center py-2 px-2.5 rounded-lg font-mono text-[10px] font-semibold tracking-wider transition-all cursor-pointer ${
-                          selectedVoice === "Tony"
-                            ? "bg-cyan-500/10 border border-cyan-400/40 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.15)] font-bold"
-                            : "border border-transparent text-slate-500 hover:text-slate-300 font-medium"
-                        }`}
-                      >
-                        <span className="uppercase text-inherit">TONY (MALE)</span>
-                      </button>
-                      <button
-                        id="voice-toni-btn"
-                        onClick={() => handleVoiceChange("Toni")}
-                        className={`flex flex-col items-center justify-center py-2 px-2.5 rounded-lg font-mono text-[10px] font-semibold tracking-wider transition-all cursor-pointer ${
-                          selectedVoice === "Toni"
-                            ? "bg-pink-500/10 border border-pink-400/40 text-pink-300 shadow-[0_0_15px_rgba(244,114,182,0.15)] font-bold"
-                            : "border border-transparent text-slate-500 hover:text-slate-300 font-medium"
-                        }`}
-                      >
-                        <span className="uppercase text-inherit">TONI (FEMALE)</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-            </section>
-
-            {/* COLUMN 2 (RIGHT 40%): Camera optics, Diagnostics log terminal, and Intelligence Capabilities */}
-            <section id="auxiliary-sensor-pane" className="w-full md:w-[40%] flex flex-col gap-4 min-h-0">
+            {/* Right Column: Computer Vision Stream & Core Subsystem Activity Logs */}
+            <div className="flex flex-col gap-4">
               
-              {/* Camera Stream optic */}
-              <div className="flex-1 min-h-[250px] flex flex-col">
-                <CameraStream 
-                  onCapture={handleCameraCapture}
-                  isScanning={isThinking}
-                  addLog={addLog}
-                  forceActive={forceCameraActive}
-                  onLiveFrame={handleLiveFrame}
-                />
-              </div>
-
-              {/* Sreehari Mainframe Scrolling Diagnostic Log Stack */}
-              <div id="diagnostics-terminal" className="glass-panel rounded-3xl p-4 md:p-5 flex flex-col h-[260px] shrink-0">
-                
-                {/* Header logs */}
-                <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-3 shrink-0">
-                  <div className="flex items-center gap-1.5">
-                    <Terminal className="w-4 h-4 text-cyan-400" />
-                    <span className="font-display font-medium text-slate-200 text-xs tracking-wider uppercase">
-                      DIAGNOSTICS & NEURAL LOGS
-                    </span>
+              {/* Optics Camera Scanner */}
+              <div className="border border-white/10 bg-slate-950/40 rounded-2xl p-4 backdrop-blur-md flex flex-col justify-between relative overflow-hidden">
+                <div className="flex items-center justify-between border-b border-white/5 pb-2 mb-3">
+                  <div className="flex items-center gap-2">
+                    <Video className="w-4 h-4 text-cyan-400" />
+                    <h3 className="text-xs font-mono uppercase tracking-widest text-slate-400 font-semibold">Optic Scanners</h3>
                   </div>
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <button
+                    onClick={isLiveActive ? stopLiveSession : () => startLiveSession()}
+                    className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-mono border transition ${isLiveActive ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-white/5 border-white/5 text-slate-500"}`}
+                  >
+                    {isLiveActive ? "Live API Connected" : "Link Live Matrix"}
+                  </button>
                 </div>
 
-                {/* Logs scroller */}
+                <div className="aspect-video w-full rounded-xl bg-black/60 border border-white/5 relative overflow-hidden flex items-center justify-center">
+                  <CameraStream 
+                    active={systemActive || forceCameraActive} 
+                    onCapture={handleCameraCapture}
+                    onLiveFrame={handleLiveFrame}
+                    isLiveActive={isLiveActive}
+                  />
+                  {!isLiveActive && !cameraSnapshot && (
+                    <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[1px] flex flex-col items-center justify-center pointer-events-none p-4 text-center">
+                      <span className="text-[10px] font-mono text-slate-600 uppercase tracking-[0.25em] mb-1">[ Standby Frame Scanners ]</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Mainframe Hardware Processing Log Terminal */}
+              <div className="flex-1 flex flex-col border border-white/10 bg-slate-950/40 rounded-2xl p-4 backdrop-blur-md overflow-hidden min-h-[250px]">
+                <div className="flex items-center gap-2 border-b border-white/5 pb-2 mb-3">
+                  <Settings className="w-4 h-4 text-cyan-400 animate-spin-slow" />
+                  <h3 className="text-xs font-mono uppercase tracking-widest text-slate-400 font-semibold">Core Mainframe Logs</h3>
+                </div>
+
                 <div 
                   ref={logsContainerRef}
-                  id="logs-activity-stream"
-                  className="flex-1 overflow-y-auto space-y-2 pr-1 font-mono text-[10px]"
+                  className="flex-1 overflow-y-auto font-mono text-[11px] space-y-1.5 pr-1 text-slate-400 select-all"
                 >
-                  {logs.map((log) => {
-                    let levelColor = "text-cyan-400";
-                    if (log.level === "WARN") levelColor = "text-rose-400";
-                    if (log.level === "SUCCESS") levelColor = "text-emerald-400";
-                    if (log.level === "DIAG") levelColor = "text-amber-500";
-
-                    return (
-                      <div key={log.id} id={`log-item-${log.id}`} className="leading-normal flex gap-1 items-start select-text border-b border-white/5 pb-1">
-                        <span className="text-slate-600 font-medium shrink-0">[{log.timestamp}]</span>
-                        <span className={`font-semibold shrink-0 ${levelColor}`}>[{log.level}]</span>
-                        <span className="text-slate-400 break-words">{log.message}</span>
-                      </div>
-                    );
-                  })}
+                  {logs.map((log) => (
+                    <div key={log.id} className="flex items-start gap-1.5 leading-5 hover:bg-white/5 p-0.5 rounded transition">
+                      <span className="text-slate-600 shrink-0 select-none">[{log.timestamp}]</span>
+                      <span className={`font-bold shrink-0 select-none px-1 text-[9px] rounded uppercase tracking-wider ${
+                        log.level === "SUCCESS" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" :
+                        log.level === "WARN" ? "bg-rose-500/20 text-rose-400 border border-rose-500/30" :
+                        log.level === "DIAG" ? "bg-purple-500/20 text-purple-400 border border-purple-500/30" :
+                        "bg-cyan-500/10 text-cyan-400"
+                      }`}>
+                        {log.level}
+                      </span>
+                      <span className="text-slate-300 break-all">{log.message}</span>
+                    </div>
+                  ))}
                 </div>
-
               </div>
 
-              {/* Sreehari tech documentation list helper */}
-              <div id="stark-telemetry-helper" className="glass-panel-light rounded-2xl p-3 font-mono text-[9px] text-slate-500 shrink-0">
-                <div className="flex items-center gap-1 text-slate-400 font-semibold mb-1">
-                  <HelpCircle className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>INTELLIGENCE CAPABILITIES</span>
-                </div>
-                <ul className="list-disc list-inside space-y-0.5 pl-1">
-                  <li>Analyze snapshots of physical hardware schemas or UI drafts using <span className="text-cyan-400">Eye/Optical scanner buffer</span>.</li>
-                  <li>Click <span className="text-cyan-400">ARC Core</span> and speak. TONY recognizes complex, contextually nested vocal questions.</li>
-                  <li>Toggle different specialized emulative subroutines under Voice tuning parameters.</li>
-                </ul>
-              </div>
+            </div>
 
-            </section>
+          </div>
 
-          </main>
-
-          {/* Holographic copyright block */}
-          <footer id="jarvis-system-footer" className="border-t border-white/10 pt-2 pb-1 text-center text-slate-500 text-[9px] md:text-[10px] font-mono tracking-widest uppercase shrink-0">
-            TONY CENTRAL MAINFRAME // SECURE_SOCKET v4.11 // OPERATIONAL SECURE // SREEHARI INDUSTRIES
+          {/* Core Footer Info Overlay */}
+          <footer className="flex items-center justify-between border-t border-white/5 pt-2 text-[9px] font-mono text-slate-600 shrink-0 uppercase tracking-widest">
+            <span>Built by Sreehari Tm</span>
+            <span className="animate-pulse">Grid Feeds: Synced Secure // [ 24000Hz PCM Engine Ready ]</span>
           </footer>
 
         </div>
       )}
+
+      {/* Hidden local uploader inputs linked via native DOM hooks */}
+      <input type="file" id="biometric-uploader" className="hidden" accept="image/*" />
+      <img id="avatar-display-img" className="hidden" alt="Biometric Register Array" />
     </div>
   );
-}
-
-// Inject this isolated, local-only JavaScript handler at the absolute end of the script file to update the image:
-if (typeof document !== 'undefined') {
-  setTimeout(() => {
-    const el = document.getElementById('biometric-uploader');
-    if (el) {
-      el.addEventListener('change', function(e: any) { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = function(event: any) { const imgElement = document.getElementById('avatar-display-img'); if (imgElement) { (imgElement as any).src = event.target.result; } }; reader.readAsDataURL(file); } });
-    }
-  }, 500);
 }
